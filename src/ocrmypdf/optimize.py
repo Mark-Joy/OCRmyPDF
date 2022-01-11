@@ -113,7 +113,7 @@ def extract_image_filter(
 def extract_image_jbig2(
     *, pike: Pdf, root: Path, image: Stream, xref: Xref, options
 ) -> Optional[XrefExt]:
-    del options  # unused arg
+    #del options  # unused arg
 
     result = extract_image_filter(pike, root, image, xref)
     if result is None:
@@ -121,7 +121,7 @@ def extract_image_jbig2(
     pim, filtdp = result
 
     if (
-        pim.bits_per_component == 1
+        (options.optimize >= 9 or pim.bits_per_component == 1)
         and filtdp[0] != Name.JBIG2Decode
         and jbig2enc.available()
     ):
@@ -134,7 +134,7 @@ def extract_image_jbig2(
         if colorspace is not None or pim.image_mask:
             try:
                 # Set to DeviceGray temporarily; we already in 1 bpc.
-                pim.obj.ColorSpace = Name.DeviceGray
+                if options.optimize < 9: pim.obj.ColorSpace = Name.DeviceGray
                 imgname = root / f'{xref:08d}'
                 with imgname.open('wb') as f:
                     ext = pim.extract_to(stream=f)
@@ -285,6 +285,9 @@ def extract_images_generic(
 ) -> Tuple[List[Xref], List[Xref]]:
     """Extract any >=2bpp image we think we can improve"""
 
+    # Let extract_images_jbig2 handle if optimize option >= 9
+    if options.optimize >= 9: return [], []
+    
     jpegs = []
     pngs = []
     for _, xref_ext in extract_images(pike, root, options, extract_image_generic):
@@ -396,6 +399,8 @@ def convert_to_jbig2(
             jbig2_im_file = root / (prefix + f'.{n:04d}')
             jbig2_im_data = jbig2_im_file.read_bytes()
             im_obj = pike.get_object(xref, 0)
+            im_obj.BitsPerComponent = 1
+            im_obj.ColorSpace = Name.DeviceGray
             im_obj.write(
                 jbig2_im_data, filter=Name.JBIG2Decode, decode_parms=jbig2_globals_dict
             )

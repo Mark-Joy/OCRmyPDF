@@ -342,7 +342,7 @@ Online documentation is located at:
         '-O',
         '--optimize',
         type=int,
-        choices=range(0, 4),
+        choices=range(0, 10),
         default=1,
         help=(
             "Control how PDF is optimized after processing:"
@@ -350,6 +350,7 @@ Online documentation is located at:
             "1 - do safe, lossless optimizations (default); "
             "2 - do lossy JPEG and JPEG2000 optimizations; "
             "3 - do more aggressive lossy JPEG and JPEG2000 optimizations. "
+            "9 - convert all images to JBIG2 format"
             "To enable lossy JBIG2, see --jbig2-lossy."
         ),
     )
